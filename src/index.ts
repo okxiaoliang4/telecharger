@@ -36,28 +36,26 @@ export async function sliceDownLoad(url: string, options: SliceDownLoadOptions =
 
   const results = await Promise.all(reqs)
   console.log(results)
-  const blob = new Blob(results.map(item => item.result as Blob), { type: 'image/jpg' })
+  const blob = new Blob(results.map(item => item.result as Blob), { type: results[0]?.result.type })
   console.log(blob);
   const r = window.URL.createObjectURL(blob)
   console.log(r);
   const img = document.createElement('img')
   img.src = r
   document.body.appendChild(img)
-}
-
-export function mergeBlob(blobs: Blob[]): Blob { 
-  return new Blob(blobs, { type: 'image/jpg' })
+  
 }
 
 export async function download(index: number, url: string, start: number, end: number) {
   const result = await $fetch(url, {
+    responseType: 'blob',
     headers: {
       Range: `bytes=${start}-${end}`
     }
   })
   return {
     index,
-    result
+    result,
   }
 }
 
