@@ -7,11 +7,12 @@ telecharger is a slice download helper. using the (ohmyfetch)[https://github.com
 - [x] slice download
 - [ ] total progress
 - [ ] chunks progress
-- [ ] retry
 - [ ] pause
 - [ ] resume
+- [ ] retry
 - [ ] browser bundle
 - [ ] nodejs bundle
+- [ ] download speed
 - [ ] dynamic threads
 - [ ] dynamic chunks
 
