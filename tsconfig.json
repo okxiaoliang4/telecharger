@@ -15,7 +15,9 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "noUnusedLocals": true,
-    "types": []
+    "types": [
+      "vitest/globals"
+    ]
   },
   "exclude": [
     "node_modules",
