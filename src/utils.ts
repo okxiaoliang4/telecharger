@@ -30,7 +30,6 @@ export async function* asyncPool<IN, OUT>(concurrency: number, iterable: Readonl
 
 export async function download(chunk: TChunk) {
   const response = await $fetch.raw(chunk.url, {
-    // @ts-expect-error 目前不支持等待pr https://github.com/unjs/ohmyfetch/pull/100
     responseType: 'stream',
     headers: {
       Range: `bytes=${chunk.start}-${chunk.end}`
