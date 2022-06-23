@@ -53,6 +53,7 @@ export async function download(chunk: TChunk) {
 
     receiveArr.push(value)
     receivedLength += value.length
-    chunk.emitter.emit('progress', (receivedLength - 1) / chunk.size)
+    chunk.progress = (receivedLength - 1) / chunk.size
+    chunk.emitter.emit('progress', chunk.progress)
   }
 }

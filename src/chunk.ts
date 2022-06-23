@@ -3,7 +3,7 @@ import mitt from 'mitt'
 
 export type TChunkEvents = {
   progress: number
-  done: void
+  done: TChunk
 }
 
 export interface TChunkParameters {
@@ -18,6 +18,7 @@ export class TChunk implements TChunkParameters {
   readonly index: number
   readonly start: number
   readonly end: number
+  progress: number
   blob: Blob | null = null
 
   emitter: Emitter<TChunkEvents>
@@ -27,6 +28,7 @@ export class TChunk implements TChunkParameters {
     this.index = options.index
     this.start = options.start
     this.end = options.end
+    this.progress = 0
 
     this.emitter = mitt()
   }
