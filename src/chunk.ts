@@ -40,4 +40,7 @@ export class TChunk implements TChunkParameters {
   done(blob: Blob) {
     this.blob = blob
   }
+
+  pause() { }
+  resume() { }
 }

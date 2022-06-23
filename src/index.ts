@@ -30,6 +30,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   const contentLength = await getContentLength(url)
   const chunksCount = Math.ceil(contentLength / chunkSize);
   const chunks = new Array<TChunk>(chunksCount)
+  const undone = new Set<TChunk>()
 
   for (let i = 0; i < chunksCount; i++) {
     let start = i * chunkSize;
@@ -52,6 +53,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
       if (progress >= 1) chunk.emitter.all.delete('progress')
     })
     chunks[i] = chunk
+    undone.add(chunk)
   }
 
   (async () => {
@@ -67,6 +69,10 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     // recycle event
     emitter.all.delete('done')
   })()
+  
+  function pause() {
+    chunks.forEach(chunk => chunk.pause())
+  }
 
   return {
     chunks,
