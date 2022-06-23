@@ -13,6 +13,7 @@
     "vitest": "^0.15.2"
   },
   "dependencies": {
+    "mitt": "^3.0.0",
     "ohmyfetch": "^0.4.18"
   }
 }
