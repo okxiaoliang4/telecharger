@@ -1,8 +1,8 @@
-import { telecharger } from './src/index'
+import { telecharger } from '../src/index'
 
 const button = document.querySelector('#download')
 button?.addEventListener('click', async () => {
-  const result = await telecharger('/test.jpg', {
+  const result = await telecharger('./test.jpg', {
     threads: 2,
     chunkSize: 10_240,
   })
