@@ -6,9 +6,11 @@ button?.addEventListener('click', async () => {
     threads: 2,
     chunkSize: 10_240,
   })
+
   result.emitter.on('progress', (progress) => {
     console.log(`${progress * 100}%`);
   })
+
   result.emitter.on('done', (blob) => {
     const img = document.createElement('img')
     img.src = window.URL.createObjectURL(blob)

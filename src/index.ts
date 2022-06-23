@@ -40,11 +40,16 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
       start,
       end,
     })
-    chunk.emitter.on('progress', () => {
+    chunk.emitter.on('progress', (progress) => {
       const totalProgress = chunks.reduce((prev: number, current) => {
         return prev + current.progress
       }, 0) / chunksCount
       emitter.emit('progress', totalProgress)
+
+      // recycle event
+      if (totalProgress >= 1) emitter.all.delete('progress')
+      // recycle event
+      if (progress >= 1) chunk.emitter.all.delete('progress')
     })
     chunks[i] = chunk
   }
@@ -52,9 +57,15 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   (async () => {
     for await (const chunk of asyncPool(threads, chunks, download)) {
       chunk.emitter.emit('done', chunk)
+
+      // recycle event
+      chunk.emitter.all.delete('done')
     }
 
     emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), { type: chunks[0].blob!.type }))
+
+    // recycle event
+    emitter.all.delete('done')
   })()
 
   return {
