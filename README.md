@@ -7,8 +7,8 @@ telecharger is a slice download helper. using the [ohmyfetch](https://github.com
 - [x] slice download
 - [x] total progress
 - [x] chunks progress
-- [ ] pause
-- [ ] resume
+- [x] pause
+- [x] resume
 - [ ] retry
 - [ ] browser bundle
 - [ ] nodejs bundle
