@@ -35,9 +35,7 @@ export async function download(chunk: TChunk) {
       Range: `bytes=${chunk.start}-${chunk.end}`
     },
   })
-  const receiveArr = new Array()
 
-  let receivedLength = 0
   const reader = response.body!.getReader()
   const contentType = response.headers.get('content-type') || 'application/octet-stream'
 
@@ -45,14 +43,10 @@ export async function download(chunk: TChunk) {
     const { done, value } = await reader.read();
 
     if (done) {
-      const blob = new Blob(receiveArr.map(item => item.buffer), { type: contentType })
+      const blob = new Blob([chunk.buffer], { type: contentType })
       chunk.done(blob)
       return chunk
     }
-
-    receiveArr.push(value)
-    receivedLength += value.length
-    chunk.progress = (receivedLength - 1) / chunk.size
-    chunk.emitter.emit('progress', chunk.progress)
+    chunk.append(value)
   }
 }
