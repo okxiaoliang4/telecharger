@@ -111,5 +111,3 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     resume,
   }
 }
-
-export default telecharger

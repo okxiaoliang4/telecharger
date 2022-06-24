@@ -155,4 +155,4 @@ async function telecharger(url, options = {}) {
     resume
   };
 }
-export { telecharger as default, telecharger };
+export { telecharger };
