@@ -63,21 +63,30 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     undone.add(chunk)
   }
 
+  let status: 'init' | 'pending' | 'pausing' | 'done' = 'init'
+  let controller: AbortController
   async function start() {
+    if (status === 'pending' || status === 'done') {
+      return
+    }
+    controller = new AbortController()
+    status = 'pending'
     try {
-      for await (const chunk of asyncPool(threads, Array.from(undone), download)) {
+      for await (const chunk of asyncPool(threads, Array.from(undone), (chunk) => download(chunk, controller))) {
         chunk.emitter.emit('done', chunk)
 
         // recycle event
         chunk.emitter.all.delete('done')
       }
-
+      status = 'done'
       emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), { type: chunks[0].blob!.type }))
 
       // recycle event
       emitter.all.delete('done')
     } catch (error) {
-      console.log(error);
+      if ((error as any).name === 'AbortError') {
+        status = 'pausing'
+      }
     }
   }
 
@@ -86,17 +95,18 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   }
 
   function pause() {
-    undone.forEach(chunk => chunk.pause())
+    status = 'pausing'
+    controller.abort()
   }
 
   function resume() {
-    undone.forEach(chunk => chunk.resume())
     start()
   }
 
   return {
     chunks,
     emitter,
+    start,
     pause,
     resume,
   }
