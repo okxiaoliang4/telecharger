@@ -5,7 +5,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "dev": "vite",
-    "build": "vite",
+    "build": "vite build",
     "test": "vitest",
     "test:watch": "vitest --watch"
   },
