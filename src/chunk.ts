@@ -30,7 +30,7 @@ export class TChunk implements TChunkParameters {
     this.start = options.start
     this.end = options.end
     this.buffer = new Uint8Array(this.size)
-    this.head = 0
+    this.head = options.start
 
     this.emitter = mitt()
   }
