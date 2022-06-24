@@ -25,6 +25,12 @@ export interface TelechargerOptions {
    * @default true
    */
   immediate?: boolean
+
+  /**
+   * 重试次数
+   * @default 3
+   */
+  retry?: number
 }
 
 export async function telecharger(url: string, options: TelechargerOptions = {}) {
@@ -33,6 +39,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     threads = 8,
     chunkSize = 10_240_000,
     immediate = true,
+    retry = 3
   } = options
   const contentLength = await getContentLength(url)
   const chunksCount = Math.ceil(contentLength / chunkSize);
@@ -72,7 +79,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     controller = new AbortController()
     status = 'pending'
     try {
-      for await (const chunk of asyncPool(threads, Array.from(undone), (chunk) => download(chunk, controller))) {
+      for await (const chunk of asyncPool(threads, Array.from(undone), (chunk) => download(chunk, { controller, retry }))) {
         chunk.emitter.emit('done', chunk)
 
         // recycle event
@@ -84,6 +91,8 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
       // recycle event
       emitter.all.delete('done')
     } catch (error) {
+      console.error(error)
+      controller.abort()
       if ((error as any).name === 'AbortError') {
         status = 'pausing'
       }

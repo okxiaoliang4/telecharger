@@ -28,26 +28,43 @@ export async function* asyncPool<IN, OUT>(concurrency: number, iterable: Readonl
   }
 }
 
-export async function download(chunk: TChunk, controller: AbortController) {
-  const response = await $fetch.raw(chunk.url, {
-    signal: controller.signal,
-    responseType: 'stream',
-    headers: {
-      Range: `bytes=${chunk.head}-${chunk.end}`
-    },
-  })
+export async function download(chunk: TChunk, options: {
+  controller: AbortController
+  retry: number
+}): Promise<TChunk> {
+  try {
+    const response = await $fetch.raw(chunk.url, {
+      signal: options.controller.signal,
+      responseType: 'stream',
+      headers: {
+        Range: `bytes=${chunk.head}-${chunk.end}`
+      },
+      mode: 'cors'
+    })
 
-  const reader = response.body!.getReader()
-  const contentType = response.headers.get('content-type') || 'application/octet-stream'
+    const contentType = response.headers.get('content-type') || 'application/octet-stream'
+    const reader = response.body!.getReader()
+    while (true) {
+      const { done, value } = await reader.read();
 
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done) {
-      const blob = new Blob([chunk.buffer], { type: contentType })
-      chunk.done(blob)
-      return chunk
+      if (done) {
+        const blob = new Blob([chunk.buffer], { type: contentType })
+        chunk.done(blob)
+        return chunk
+      }
+      chunk.append(value)
     }
-    chunk.append(value)
+  } catch (err) {
+    if (options.retry > 0) {
+      await new Promise<void>((resolve, reject) => {
+        setTimeout(resolve, 1000)
+      })
+      return await download(chunk, {
+        ...options,
+        retry: options.retry - 1
+      })
+    } else {
+      throw err
+    }
   }
 }
