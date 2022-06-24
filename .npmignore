@@ -1,0 +1,7 @@
+.DS_Store
+/node_modules
+/playground
+.gitignore
+pnpm-lock.yaml
+tsconfig.json
+vitest.config.ts
