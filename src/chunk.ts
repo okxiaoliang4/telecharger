@@ -36,7 +36,7 @@ export class TChunk implements TChunkParameters {
   }
 
   get progress() {
-    return this.head / this.size
+    return (this.head - this.start) / this.size
   }
 
   get size() {
