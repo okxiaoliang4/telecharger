@@ -30,9 +30,10 @@ export async function* asyncPool<IN, OUT>(concurrency: number, iterable: Readonl
 
 export async function download(chunk: TChunk) {
   const response = await $fetch.raw(chunk.url, {
+    signal: chunk.abortController.signal,
     responseType: 'stream',
     headers: {
-      Range: `bytes=${chunk.start}-${chunk.end}`
+      Range: `bytes=${chunk.head}-${chunk.end}`
     },
   })
 

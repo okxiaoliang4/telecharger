@@ -69,14 +69,20 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     // recycle event
     emitter.all.delete('done')
   })()
-  
+
   function pause() {
-    chunks.forEach(chunk => chunk.pause())
+    undone.forEach(chunk => chunk.pause())
+  }
+
+  function resume() {
+    undone.forEach(chunk => chunk.resume())
   }
 
   return {
     chunks,
     emitter,
+    pause,
+    resume,
   }
 }
 

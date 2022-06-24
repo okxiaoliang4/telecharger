@@ -21,6 +21,7 @@ export class TChunk implements TChunkParameters {
   buffer: Uint8Array
   head: number
   blob: Blob | null = null
+  abortController: AbortController
 
   emitter: Emitter<TChunkEvents>
 
@@ -31,6 +32,7 @@ export class TChunk implements TChunkParameters {
     this.end = options.end
     this.buffer = new Uint8Array(this.size)
     this.head = 0
+    this.abortController = new AbortController()
 
     this.emitter = mitt()
   }
@@ -53,6 +55,13 @@ export class TChunk implements TChunkParameters {
     this.blob = blob
   }
 
-  pause() { }
-  resume() { }
+  pause() { 
+    console.log('abort');
+    
+    this.abortController.abort()
+  }
+
+  resume() { 
+    this.abortController = new AbortController()
+  }
 }
