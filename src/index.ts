@@ -19,6 +19,12 @@ export interface TelechargerOptions {
    * @default 10_240_000
    */
   chunkSize?: number
+
+  /**
+   * 是否立即下载
+   * @default true
+   */
+  immediate?: boolean
 }
 
 export async function telecharger(url: string, options: TelechargerOptions = {}) {
@@ -26,6 +32,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   const {
     threads = 8,
     chunkSize = 10_240_000,
+    immediate = true,
   } = options
   const contentLength = await getContentLength(url)
   const chunksCount = Math.ceil(contentLength / chunkSize);
@@ -56,19 +63,27 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     undone.add(chunk)
   }
 
-  (async () => {
-    for await (const chunk of asyncPool(threads, chunks, download)) {
-      chunk.emitter.emit('done', chunk)
+  async function start() {
+    try {
+      for await (const chunk of asyncPool(threads, Array.from(undone), download)) {
+        chunk.emitter.emit('done', chunk)
+
+        // recycle event
+        chunk.emitter.all.delete('done')
+      }
+
+      emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), { type: chunks[0].blob!.type }))
 
       // recycle event
-      chunk.emitter.all.delete('done')
+      emitter.all.delete('done')
+    } catch (error) {
+      console.log(error);
     }
+  }
 
-    emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), { type: chunks[0].blob!.type }))
-
-    // recycle event
-    emitter.all.delete('done')
-  })()
+  if (immediate) {
+    start()
+  }
 
   function pause() {
     undone.forEach(chunk => chunk.pause())
@@ -76,6 +91,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
 
   function resume() {
     undone.forEach(chunk => chunk.resume())
+    start()
   }
 
   return {

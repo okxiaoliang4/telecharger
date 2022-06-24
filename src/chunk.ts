@@ -40,12 +40,12 @@ export class TChunk implements TChunkParameters {
   get progress() {
     return this.head / this.size
   }
-  
+
   get size() {
     return (this.end - this.start) + 1
   }
 
-  append(value: Uint8Array) { 
+  append(value: Uint8Array) {
     this.buffer.set(value, this.head)
     this.head += value.length
     this.emitter.emit('progress', this.progress)
@@ -55,13 +55,11 @@ export class TChunk implements TChunkParameters {
     this.blob = blob
   }
 
-  pause() { 
-    console.log('abort');
-    
+  pause() {
     this.abortController.abort()
   }
 
-  resume() { 
+  resume() {
     this.abortController = new AbortController()
   }
 }
