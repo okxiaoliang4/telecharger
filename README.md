@@ -1,6 +1,6 @@
 # telecharger
 
-telecharger is a slice download helper. using the [ohmyfetch](https://github.com/unjs/ohmyfetch)
+telecharger is a slice download helper.
 
 ## TODO: 
 

@@ -1,8 +1,7 @@
-import { $fetch } from 'ohmyfetch'
 import { TChunk } from './chunk';
 
 export function getContentLength(url: string) {
-  return $fetch.raw(url, {
+  return fetch(url, {
     method: 'HEAD'
   }).then(res => Number(res.headers.get('Content-Length')))
 }
@@ -29,9 +28,8 @@ export async function* asyncPool<IN, OUT>(concurrency: number, iterable: Readonl
 }
 
 export async function download(chunk: TChunk, controller: AbortController) {
-  const response = await $fetch.raw(chunk.url, {
+  const response = await fetch(chunk.url, {
     signal: controller.signal,
-    responseType: 'stream',
     headers: {
       Range: `bytes=${chunk.head}-${chunk.end}`
     },
