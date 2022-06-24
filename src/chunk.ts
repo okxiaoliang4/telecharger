@@ -28,9 +28,9 @@ export class TChunk implements TChunkParameters {
     this.url = options.url
     this.index = options.index
     this.start = options.start
+    this.head = options.start
     this.end = options.end
     this.buffer = new Uint8Array(this.size)
-    this.head = options.start
 
     this.emitter = mitt()
   }
@@ -44,7 +44,7 @@ export class TChunk implements TChunkParameters {
   }
 
   append(value: Uint8Array) {
-    this.buffer.set(value, this.head)
+    this.buffer.set(value, this.head - this.start)
     this.head += value.length
     this.emitter.emit('progress', this.progress)
   }
