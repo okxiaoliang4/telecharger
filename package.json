@@ -11,6 +11,16 @@
       "require": "./dist/telecharger.umd.js"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/okxiaoliang4/telecharger"
+  },
+  "keywords": [
+    "slice download",
+    "download",
+    "browser",
+    "nodejs"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
