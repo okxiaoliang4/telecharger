@@ -2,7 +2,10 @@ import { TChunk } from './chunk';
 
 export function getHead(url: string) {
   return fetch(url, {
-    method: 'HEAD'
+    method: 'HEAD',
+    headers: {
+      Range: 'bytes=0-1'
+    }
   }).then(res => res.headers)
 }
 

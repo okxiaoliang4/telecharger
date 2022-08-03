@@ -27,6 +27,12 @@ export interface TelechargerOptions {
   immediate?: boolean
 }
 
+export class UnSupportRangeError extends Error {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export async function telecharger(url: string, options: TelechargerOptions = {}) {
   const emitter = mitt<TelechargerEvent>()
   const {
@@ -35,6 +41,10 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     immediate = true,
   } = options
   const headers = await getHead(url)
+  const isSupportedRange = headers.get('Accept-Ranges')?.includes('bytes')
+  if (!isSupportedRange) {
+    throw new UnSupportRangeError('unsupport http range')
+  }
   const contentLength = Number(headers.get('Content-Length'))
   const chunksCount = Math.ceil(contentLength / chunkSize);
   const chunks = new Array<TChunk>(chunksCount)
