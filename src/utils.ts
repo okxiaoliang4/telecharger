@@ -1,9 +1,9 @@
 import { TChunk } from './chunk';
 
-export function getContentLength(url: string) {
+export function getHead(url: string) {
   return fetch(url, {
     method: 'HEAD'
-  }).then(res => Number(res.headers.get('Content-Length')))
+  }).then(res => res.headers)
 }
 
 export async function* asyncPool<IN, OUT>(concurrency: number, iterable: ReadonlyArray<IN>, iteratorFn: (item: IN, iterable?: ReadonlyArray<IN>) => Promise<OUT>): AsyncIterableIterator<OUT> {

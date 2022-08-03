@@ -1,4 +1,4 @@
-import { asyncPool, download, getContentLength } from './utils'
+import { asyncPool, download, getHead } from './utils'
 import { TChunk } from './chunk'
 import mitt from 'mitt'
 
@@ -34,7 +34,8 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     chunkSize = 10_240_000,
     immediate = true,
   } = options
-  const contentLength = await getContentLength(url)
+  const headers = await getHead(url)
+  const contentLength = Number(headers.get('Content-Length'))
   const chunksCount = Math.ceil(contentLength / chunkSize);
   const chunks = new Array<TChunk>(chunksCount)
   const undone = new Set<TChunk>()
