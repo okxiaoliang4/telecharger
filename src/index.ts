@@ -5,6 +5,7 @@ import mitt from 'mitt'
 export type TelechargerEvent = {
   progress: number
   done: Blob
+  error: Error
 }
 
 export interface TelechargerOptions {
@@ -12,22 +13,33 @@ export interface TelechargerOptions {
    * 线程数
    * @default 8
    */
-  threads?: number
+  threads?: number;
 
   /**
    * 块大小
    * @default 10_240_000
    */
-  chunkSize?: number
+  chunkSize?: number;
 
   /**
    * 是否立即下载
    * @default true
    */
-  immediate?: boolean
+  immediate?: boolean;
 }
 
-export class UnSupportRangeError extends Error {
+/**
+ * 状态枚举
+ */
+enum Status {
+  init,
+  pending,
+  pausing,
+  error,
+  done,
+}
+
+export class UnsupportedRangeError extends Error {
   constructor(message: string) {
     super(message)
   }
@@ -40,63 +52,78 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
     chunkSize = 10_240_000,
     immediate = true,
   } = options
+
+  // 发起Head请求
   const headers = await getHead(url)
+  const contentType = headers.get('Content-Type')!
+
+  // 判断是否支持 HTTP Range
   const isSupportedRange = headers.get('Accept-Ranges')?.includes('bytes')
-  if (!isSupportedRange) {
-    throw new UnSupportRangeError('unsupport http range')
-  }
+  if (!isSupportedRange) throw new UnsupportedRangeError('unsupported http range')
+
   const contentLength = Number(headers.get('Content-Length'))
-  const chunksCount = Math.ceil(contentLength / chunkSize);
+  // 根据contentLength计算总chunk数，向上取整
+  const chunksCount = Math.ceil(contentLength / chunkSize)
+  // 创建chunk数组
   const chunks = new Array<TChunk>(chunksCount)
+  // 未完成的chunk集合
   const undone = new Set<TChunk>()
 
   for (let i = 0; i < chunksCount; i++) {
-    let start = i * chunkSize;
-    let end = i + 1 == chunksCount ? contentLength - 1 : (i + 1) * chunkSize - 1;
+    // 创建chunk
+    let start = i * chunkSize
+    let end = i + 1 == chunksCount ? contentLength - 1 : (i + 1) * chunkSize - 1
     const chunk = new TChunk({
       url,
       index: i,
       start,
       end,
     })
+
+    // 每个chunk的进度事件
     chunk.emitter.on('progress', (progress) => {
       const totalProgress = chunks.reduce((prev: number, current) => {
         return prev + current.progress
       }, 0) / chunksCount
       emitter.emit('progress', totalProgress)
 
-      // recycle event
+      // 回收整体progress事件
       if (totalProgress >= 1) emitter.all.delete('progress')
-      // recycle event
+      // 回收当前chunk progress事件
       if (progress >= 1) chunk.emitter.all.delete('progress')
     })
+
     chunks[i] = chunk
     undone.add(chunk)
   }
 
-  let status: 'init' | 'pending' | 'pausing' | 'done' = 'init'
+  let status: Status = 0
   let controller: AbortController
+
   async function start() {
-    if (status === 'pending' || status === 'done') {
+    if (status === Status.pending || status === Status.done)
       return
-    }
+
     controller = new AbortController()
-    status = 'pending'
+    status = Status.pending
+
     try {
       for await (const chunk of asyncPool(threads, Array.from(undone), (chunk) => download(chunk, controller))) {
         chunk.emitter.emit('done', chunk)
 
-        // recycle event
+        // 回收事件
         chunk.emitter.all.delete('done')
       }
-      status = 'done'
-      emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), { type: chunks[0].blob!.type }))
-
-      // recycle event
+      status = Status.done
+      emitter.emit('done', new Blob(chunks.map(chunk => chunk.blob!), {type: contentType}))
+      // 回收事件
       emitter.all.delete('done')
     } catch (error) {
-      if ((error as any).name === 'AbortError') {
-        status = 'pausing'
+      if ((error as any)?.name === 'AbortError') {
+        status = Status.pausing
+      } else {
+        status = Status.error
+        emitter.emit('error', error as Error)
       }
     }
   }
@@ -106,7 +133,7 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   }
 
   function pause() {
-    status = 'pausing'
+    status = Status.pausing
     controller.abort()
   }
 
