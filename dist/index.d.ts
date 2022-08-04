@@ -2,6 +2,7 @@ import { TChunk } from './chunk';
 export declare type TelechargerEvent = {
     progress: number;
     done: Blob;
+    error: Error;
 };
 export interface TelechargerOptions {
     /**
@@ -19,6 +20,9 @@ export interface TelechargerOptions {
      * @default true
      */
     immediate?: boolean;
+}
+export declare class UnsupportedRangeError extends Error {
+    constructor(message: string);
 }
 export declare function telecharger(url: string, options?: TelechargerOptions): Promise<{
     chunks: TChunk[];

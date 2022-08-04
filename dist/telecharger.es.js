@@ -1,7 +1,10 @@
-function getContentLength(url) {
+function getHead(url) {
   return fetch(url, {
-    method: "HEAD"
-  }).then((res) => Number(res.headers.get("Content-Length")));
+    method: "HEAD",
+    headers: {
+      Range: "bytes=0-1"
+    }
+  }).then((res) => res.headers);
 }
 async function* asyncPool(concurrency, iterable, iteratorFn) {
   const executing = /* @__PURE__ */ new Set();
@@ -82,14 +85,25 @@ class TChunk {
     this.blob = blob;
   }
 }
+class UnsupportedRangeError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
 async function telecharger(url, options = {}) {
+  var _a;
   const emitter = mitt();
   const {
     threads = 8,
     chunkSize = 1024e4,
     immediate = true
   } = options;
-  const contentLength = await getContentLength(url);
+  const headers = await getHead(url);
+  const contentType = headers.get("Content-Type");
+  const isSupportedRange = (_a = headers.get("Accept-Ranges")) == null ? void 0 : _a.includes("bytes");
+  if (!isSupportedRange)
+    throw new UnsupportedRangeError("unsupported http range");
+  const contentLength = Number(headers.get("Content-Length"));
   const chunksCount = Math.ceil(contentLength / chunkSize);
   const chunks = new Array(chunksCount);
   const undone = /* @__PURE__ */ new Set();
@@ -115,25 +129,27 @@ async function telecharger(url, options = {}) {
     chunks[i] = chunk;
     undone.add(chunk);
   }
-  let status = "init";
+  let status = 0;
   let controller;
   async function start() {
-    if (status === "pending" || status === "done") {
+    if (status === 1 || status === 4)
       return;
-    }
     controller = new AbortController();
-    status = "pending";
+    status = 1;
     try {
       for await (const chunk of asyncPool(threads, Array.from(undone), (chunk2) => download(chunk2, controller))) {
         chunk.emitter.emit("done", chunk);
         chunk.emitter.all.delete("done");
       }
-      status = "done";
-      emitter.emit("done", new Blob(chunks.map((chunk) => chunk.blob), { type: chunks[0].blob.type }));
+      status = 4;
+      emitter.emit("done", new Blob(chunks.map((chunk) => chunk.blob), { type: contentType }));
       emitter.all.delete("done");
     } catch (error) {
-      if (error.name === "AbortError") {
-        status = "pausing";
+      if ((error == null ? void 0 : error.name) === "AbortError") {
+        status = 2;
+      } else {
+        status = 3;
+        emitter.emit("error", error);
       }
     }
   }
@@ -141,7 +157,7 @@ async function telecharger(url, options = {}) {
     start();
   }
   function pause() {
-    status = "pausing";
+    status = 2;
     controller.abort();
   }
   function resume() {
@@ -155,4 +171,4 @@ async function telecharger(url, options = {}) {
     resume
   };
 }
-export { telecharger };
+export { UnsupportedRangeError, telecharger };
