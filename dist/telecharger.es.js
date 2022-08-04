@@ -2,7 +2,7 @@ function getHead(url) {
   return fetch(url, {
     method: "HEAD",
     headers: {
-      Range: "bytes=0-1"
+      Range: "bytes=0"
     }
   }).then((res) => res.headers);
 }
@@ -103,7 +103,10 @@ async function telecharger(url, options = {}) {
   const isSupportedRange = (_a = headers.get("Accept-Ranges")) == null ? void 0 : _a.includes("bytes");
   if (!isSupportedRange)
     throw new UnsupportedRangeError("unsupported http range");
-  const contentLength = Number(headers.get("Content-Length"));
+  const contentRange = headers.get("Content-Range");
+  if (!contentRange)
+    throw new UnsupportedRangeError("no Content-Range");
+  const contentLength = Number(contentRange.split("/")[1]);
   const chunksCount = Math.ceil(contentLength / chunkSize);
   const chunks = new Array(chunksCount);
   const undone = /* @__PURE__ */ new Set();
