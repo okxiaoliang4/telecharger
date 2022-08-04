@@ -60,8 +60,12 @@ export async function telecharger(url: string, options: TelechargerOptions = {})
   // 判断是否支持 HTTP Range
   const isSupportedRange = headers.get('Accept-Ranges')?.includes('bytes')
   if (!isSupportedRange) throw new UnsupportedRangeError('unsupported http range')
+  // 判断是否有Content-Range头部返回
+  // ! 注意 CORS 需要配置 Access-Control-Expose-Headers 否则拿不到
+  const contentRange = headers.get('Content-Range')
+  if (!contentRange) throw new UnsupportedRangeError('no Content-Range')
 
-  const contentLength = Number(headers.get('Content-Length'))
+  const contentLength = Number(contentRange.split('/')[1])
   // 根据contentLength计算总chunk数，向上取整
   const chunksCount = Math.ceil(contentLength / chunkSize)
   // 创建chunk数组
