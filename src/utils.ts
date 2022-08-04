@@ -4,7 +4,7 @@ export function getHead(url: string) {
   return fetch(url, {
     method: 'HEAD',
     headers: {
-      Range: 'bytes=0-1'
+      Range: 'bytes=0'
     }
   }).then(res => res.headers)
 }
